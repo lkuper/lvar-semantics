@@ -143,7 +143,8 @@ implementations in which parallel evaluation is ``lockstep''.
 
 ### Version requirements
 
-The code has been tested under **Racket v5.3.5** (released June 2013).
+The code has been tested under
+[various versions of Racket](https://travis-ci.org/lkuper/lvar-semantics).
 Other versions may also work.
 
 ### Building and running
@@ -173,11 +174,6 @@ The slow test takes several orders of magnitude longer when run with
 using `traces` finds 64 terms for the slow version, and 15 for the
 fast version.  
 
-### Automated testing
-
-The lambdaLVar tests run regularly on [a Jenkins continuous
-integration server][jenkins].
-
 [lambdaLVar-TR]: http://www.cs.indiana.edu/cgi-bin/techreports/TRNNN.cgi?trnum=TR702
 
 [eval-contexts]: http://www.ccs.neu.edu/racket/pubs/tcs92-fh.pdf
@@ -189,5 +185,3 @@ integration server][jenkins].
 [traces]: http://docs.racket-lang.org/redex/GUI.html?q=traces#%28def._%28%28lib._redex/gui..rkt%29._traces%29%29
 
 [k-framework]: http://k-framework.org
-
-[jenkins]: http://tester-lin.soic.indiana.edu:8080/job/lambdaLVar-redex/

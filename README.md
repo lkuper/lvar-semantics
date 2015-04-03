@@ -1,6 +1,8 @@
 PLT Redex models of LVar calculi
 ================================
 
+[![Build Status](https://travis-ci.org/lkuper/lvar-semantics.svg?branch=master)](https://travis-ci.org/lkuper/lvar-semantics)
+
 Subdirectories include:
 
   * [lambdaLVish]: the new, improved LVish Redex model, now with
@@ -17,5 +19,3 @@ Subdirectories include:
 [lambdaLVish]: https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVish
 [LVish]: https://github.com/lkuper/lvar-semantics/tree/master/LVish
 [lambdaLVar]: https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVar
-
-

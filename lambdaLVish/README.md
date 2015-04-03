@@ -6,7 +6,8 @@ for `bump`.
 
 ### Version requirements
 
-The code has been tested under **Racket v5.3.5** (released June 2013).
+The code has been tested under
+[various versions of Racket](https://travis-ci.org/lkuper/lvar-semantics).
 Other versions may also work.
 
 It will _not_ work under versions prior to 5.3.2 (released January
@@ -17,13 +18,3 @@ It will _not_ work under versions prior to 5.3.2 (released January
 
 Running `make all` in this directory will build all the lambdaLVish
 languages and run their test suites.
-
-### Automated testing
-
-Soon!
-
-<!-- The lambdaLVish tests run regularly on -->
-<!-- [a Jenkins continuous integration server][jenkins]. -->
-
-[jenkins]:
-http://tester-lin.soic.indiana.edu:8080/job/lambdaLVish-redex/
