@@ -50,6 +50,7 @@
              lookup-val
              lookup-status
              lookup-state
+             lookup-type
              update-state
              incomp
              store-dom-diff
@@ -72,7 +73,8 @@
          (e e)
          (get e e)
          (put e e)
-         new
+         newPuttable
+         newBumpable
          (freeze e)
          (freeze e after e with e)
          (bump e)
@@ -97,9 +99,10 @@
                    ;; (we use StoreVal instead of d here because it
                    ;; will never be Top)
 
-         (StoreVal status) ;; return value of `get` (we use (StoreVal
-                           ;; status) instead of p here because it
-                           ;; will never be Top-p)
+         (StoreVal status type) ;; return value of `get` (we use
+                                ;; (StoreVal status type) instead of p
+                                ;; here because it will never be
+                                ;; Top-p)
 
          l  ;; locations (pointers to LVars in the store)
          P  ;; threshold sets
@@ -107,10 +110,10 @@
          (lambda (x) e))
 
       ;; Lattice elements, representing the "value" part of the state
-      ;; of an LVar (the other part being "status").  We assume Top
-      ;; and Bot lattice elements in addition to the user-specified
-      ;; set of lattice elements.  A StoreVal can be any element of
-      ;; the lattice except Top.
+      ;; of an LVar (the other parts being "status" and "type").  We
+      ;; assume Top and Bot lattice elements in addition to the
+      ;; user-specified set of lattice elements.  A StoreVal can be
+      ;; any element of the lattice except Top.
       
       ;; N.B. In the LaTeX grammar, we leave out these next two rules.
       ;; That's because in that grammar, the user-provided lattice
@@ -216,8 +219,8 @@
        (--> (S (in-hole E (put l d_2)))
             ((update-state S l p_2) (in-hole E ()))
             (where p_1 (lookup-state S l))
-            (where p_2 (lub-p p_1 (d_2 #f)))
-            (where (StoreVal status) p_2)
+            (where p_2 (lub-p p_1 (d_2 #f Puttable)))
+            (where (StoreVal status type) p_2)
             (where Puttable (lookup-type S l))
             "E-Put")
 
@@ -227,7 +230,7 @@
        (--> (S (in-hole E (put l d_2)))
             Error
             (where p_1 (lookup-state S l))
-            (where Top-p (lub-p p_1 (d_2 #f)))
+            (where Top-p (lub-p p_1 (d_2 #f Puttable)))
             "E-Put-Err")
        
        ;; An LVar can only be bumped if it's unfrozen and Bumpable.
@@ -364,9 +367,13 @@
       [(lvstatus LVar) ,(second (second (term LVar)))])
 
     (define-metafunction name
-      build-lv : l StoreVal status -> LVar
-      [(build-lv l StoreVal status)
-       (l (StoreVal status))])
+      lvtype : LVar -> type
+      [(lvtype LVar) ,(third (second (term LVar)))])
+
+    (define-metafunction name
+      build-lv : l StoreVal status type -> LVar
+      [(build-lv l StoreVal status type)
+       (l (StoreVal status type))])
 
     ;; Returns a store that is the same as the original store S, but
     ;; with S(l) modified to be frozen.
@@ -376,7 +383,7 @@
        ,(let ([lv (assq (term l) (term S))]
               [update (lambda (lv)
                         (if (equal? (term (lvloc ,lv)) (term l))
-                            (term (build-lv (lvloc ,lv) (lvvalue ,lv) #t)) 
+                            (term (build-lv (lvloc ,lv) (lvvalue ,lv) #t (lvtype ,lv)))
                             lv))])
           (if lv
               (term ,(map update (term S)))
@@ -420,10 +427,10 @@
     (define-metafunction name
       store-dom : S -> (l (... ...))
       [(store-dom ()) ()]
-      [(store-dom ((l_1 (StoreVal_1 status_1))
-                   (l_2 (StoreVal_2 status_2)) (... ...)))
+      [(store-dom ((l_1 (StoreVal_1 status_1 type_1))
+                   (l_2 (StoreVal_2 status_2 type_2)) (... ...)))
        ,(cons (term l_1)
-              (term (store-dom ((l_2 (StoreVal_2 status_2)) (... ...)))))])
+              (term (store-dom ((l_2 (StoreVal_2 status_2 type_2)) (... ...)))))])
 
     ;; Return a list of locations in dom(S_1) that are not in dom(S_2).
     (define-metafunction name
@@ -481,33 +488,35 @@
       ;; than both d_1 and d_2.  In this case, (not (leq d_1 d_2)).
       [(leq d_1 d_2) #f])
 
-    ;; The lub operation, but extended to handle status bits:
+    ;; The lub operation, but extended to handle status bits.  We
+    ;; always use `Puttable` as the type here because we shouldn't be
+    ;; calling lub-p on anything that isn't Puttable!
     (define-metafunction name
       lub-p : p p -> p
 
       ;; Neither frozen:
-      [(lub-p (d_1 #f) (d_2 #f))
+      [(lub-p (d_1 #f Puttable) (d_2 #f Puttable))
        ,(let ([d (term (lub d_1 d_2))])
           (if (equal? d (term Top))
               (term Top-p)
-              `(,d #f)))]
+              `(,d #f Puttable)))]
 
       ;; Both frozen:
-      [(lub-p (d_1 #t) (d_2 #t))
+      [(lub-p (d_1 #t Puttable) (d_2 #t Puttable))
        ,(if (equal? (term d_1) (term d_2))
-            (term (d_1 #t))
+            (term (d_1 #t Puttable))
             (term Top-p))]
 
       ;; d_1 unfrozen, d_2 frozen:
-      [(lub-p (d_1 #f) (d_2 #t))
+      [(lub-p (d_1 #f Puttable) (d_2 #t Puttable))
        ,(if (term (leq d_1 d_2))
-            (term (d_2 #t))
+            (term (d_2 #t Puttable))
             (term Top-p))]
 
       ;; d_1 frozen, d_2 unfrozen:
-      [(lub-p (d_1 #t) (d_2 #f))
+      [(lub-p (d_1 #t Puttable) (d_2 #f Puttable))
        ,(if (term (leq d_2 d_1))
-            (term (d_1 #t))
+            (term (d_1 #t Puttable))
             (term Top-p))])
 
     ;; The leq operation, but extended to handle status bits:
@@ -515,19 +524,19 @@
       leq-p : p p -> boolean
 
       ;; Neither frozen:
-      [(leq-p (d_1 #f) (d_2 #f))
+      [(leq-p (d_1 #f type_1) (d_2 #f type_2))
        (leq d_1 d_2)]
 
       ;; Both frozen:
-      [(leq-p (d_1 #t) (d_2 #t))
+      [(leq-p (d_1 #t type_1) (d_2 #t type_2))
        ,(equal? (term d_1) (term d_2))]
 
       ;; d_1 unfrozen, d_2 frozen:
-      [(leq-p (d_1 #f) (d_2 #t))
+      [(leq-p (d_1 #f type_1) (d_2 #t type_2))
        (leq d_1 d_2)]
 
       ;; d_1 frozen, d_2 unfrozen:
-      [(leq-p (d_1 #t) (d_2 #f))
+      [(leq-p (d_1 #t type_1) (d_2 #f type_2))
        ,(equal? (term d_1) (term Top))])
 
     (define-metafunction name
@@ -548,6 +557,13 @@
                              (if lv
                                  (term (lvstatus ,lv))
                                  (error "lookup-status: lookup failed")))])
+
+    (define-metafunction name
+      lookup-type : S l -> type
+      [(lookup-type S l) ,(let ([lv (assq (term l) (term S))])
+                             (if lv
+                                 (term (lvtype ,lv))
+                                 (error "lookup-type: lookup failed")))])
 
     (define-metafunction name
       lookup-state : S l -> p

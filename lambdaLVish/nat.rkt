@@ -46,34 +46,34 @@
   
   (define (meta-test-suite)
     (test-equal
-     (term (exists-p (6 #f) ()))
+     (term (exists-p (6 #f Bumpable) ()))
      (term #f))
 
     (test-equal
-     (term (exists-p (6 #f) ((3 #f))))
-     (term (3 #f)))
+     (term (exists-p (6 #f Bumpable) ((3 #f Bumpable))))
+     (term (3 #f Bumpable)))
 
     (test-equal
-     (term (exists-p (6 #f) ((9 #f))))
+     (term (exists-p (6 #f Bumpable) ((9 #f Bumpable))))
      (term #f))
 
     (test-equal
-     (term (exists-p (3 #f) ((3 #f))))
-     (term (3 #f)))
+     (term (exists-p (3 #f Bumpable) ((3 #f Bumpable))))
+     (term (3 #f Bumpable)))
 
     ;; These next three are unrealistic for this lattice because Q would
     ;; be a singleton set, but it's here to exercise exists-p.
     (test-equal
-     (term (exists-p (6 #f) ((7 #f) (8 #f) (9 #f))))
+     (term (exists-p (6 #f Bumpable) ((7 #f Bumpable) (8 #f Bumpable) (9 #f Bumpable))))
      (term #f))
 
     (test-equal
-     (term (exists-p (6 #f) ((7 #f) (8 #f) (9 #f) (6 #f))))
-     (term (6 #f)))
+     (term (exists-p (6 #f Bumpable) ((7 #f Bumpable) (8 #f Bumpable) (9 #f Bumpable) (6 #f Bumpable))))
+     (term (6 #f Bumpable)))
 
     (test-equal
-     (term (exists-p (6 #f) ((7 #f) (8 #f) (9 #f) (5 #f))))
-     (term (5 #f)))
+     (term (exists-p (6 #f Bumpable) ((7 #f Bumpable) (8 #f Bumpable) (9 #f Bumpable) (5 #f Bumpable))))
+     (term (5 #f Bumpable)))
 
     (test-equal
      (term (lub Bot Bot))
@@ -92,31 +92,31 @@
      (term 3))
 
     (test-equal
-     (term (lub-p (3 #f) (4 #f)))
-     (term ((lub 3 4) #f)))
+     (term (lub-p (3 #f Puttable) (4 #f Puttable)))
+     (term ((lub 3 4) #f Puttable)))
 
     (test-equal
-     (term (lub-p (3 #t) (3 #t)))
-     (term (3 #t)))
+     (term (lub-p (3 #t Puttable) (3 #t Puttable)))
+     (term (3 #t Puttable)))
 
     (test-equal
-     (term (lub-p (3 #t) (4 #t)))
+     (term (lub-p (3 #t Puttable) (4 #t Puttable)))
      (term Top-p))
 
     (test-equal
-     (term (lub-p (3 #f) (4 #t)))
-     (term (4 #t)))
+     (term (lub-p (3 #f Puttable) (4 #t Puttable)))
+     (term (4 #t Puttable)))
 
     (test-equal
-     (term (lub-p (4 #f) (3 #t)))
+     (term (lub-p (4 #f Puttable) (3 #t Puttable)))
      (term Top-p))
 
     (test-equal
-     (term (lub-p (4 #t) (3 #f)))
-     (term (4 #t)))
+     (term (lub-p (4 #t Puttable) (3 #f Puttable)))
+     (term (4 #t Puttable)))
 
     (test-equal
-     (term (lub-p (3 #t) (4 #f)))
+     (term (lub-p (3 #t Puttable) (4 #f Puttable)))
      (term Top-p))
 
     (test-equal
@@ -314,66 +314,70 @@
      (term #f))
 
     (test-equal
-     (term (store-dom ((l1 (4 #f)) (l2 (5 #f)) (l3 (Bot #f)))))
+     (term (store-dom ((l1 (4 #f Puttable)) (l2 (5 #f Bumpable)) (l3 (Bot #f Puttable)))))
      (term (l1 l2 l3)))
     
     (test-equal
-     (term (lookup-val ((l (2 #f))) l))
+     (term (lookup-val ((l (2 #f Puttable))) l))
      (term 2))
 
     (test-equal
-     (term (lookup-status ((l (2 #f))) l))
+     (term (lookup-status ((l (2 #f Puttable))) l))
      (term #f))
 
     (test-equal
-     (term (lookup-status ((l (2 #t))) l))
+     (term (lookup-status ((l (2 #t Puttable))) l))
      (term #t))
 
     (test-equal
-     (term (lookup-state ((l (2 #t))) l))
-     (term (2 #t)))
+     (term (lookup-state ((l (2 #t Puttable))) l))
+     (term (2 #t Puttable)))
 
     (test-equal
-     (term (lookup-state ((l (2 #t)) (l1 (3 #f))) l1))
-     (term (3 #f)))
-    
-    (test-equal
-     (term (update-state () l (4 #f)))
-     (term ((l (4 #f)))))
-    
-    (test-equal
-     (term (update-state ((l (3 #f))) l (4 #f)))
-     (term ((l (4 #f)))))
+     (term (lookup-state ((l (2 #t Puttable)) (l1 (3 #f Puttable))) l1))
+     (term (3 #f Puttable)))
 
     (test-equal
-     (term (update-state () l (Bot #f)))
-     (term ((l (Bot #f)))))
+     (term (lookup-type ((l (2 #t Puttable)) (l1 (3 #f Puttable))) l1))
+     (term Puttable))
+    
+    (test-equal
+     (term (update-state () l (4 #f Puttable)))
+     (term ((l (4 #f Puttable)))))
+    
+    (test-equal
+     (term (update-state ((l (3 #f Puttable))) l (4 #f Puttable)))
+     (term ((l (4 #f Puttable)))))
+
+    (test-equal
+     (term (update-state () l (Bot #f Puttable)))
+     (term ((l (Bot #f Puttable)))))
 
     (test-equal
      (term (store-dom ()))
      (term ()))
 
     (test-equal
-     (term (store-dom ((l (3 #f)) (l1 (4 #f)))))
+     (term (store-dom ((l (3 #f Puttable)) (l1 (4 #f Puttable)))))
      (term (l l1)))
 
     (test-equal
-     (term (store-dom-diff ((l (3 #f)) (l1 (4 #f)))
-                           ((l (4 #f)) (l1 (3 #f)))))
+     (term (store-dom-diff ((l (3 #f Puttable)) (l1 (4 #f Puttable)))
+                           ((l (4 #f Puttable)) (l1 (3 #f Puttable)))))
      (term ()))
 
     (test-equal
-     (term (store-dom-diff ((l (3 #f)))
-                           ((l (4 #f)) (l1 (3 #f)))))
+     (term (store-dom-diff ((l (3 #f Puttable)))
+                           ((l (4 #f Puttable)) (l1 (3 #f Puttable)))))
      (term ()))
 
     (test-equal
-     (term (store-dom-diff ((l (4 #f)) (l1 (3 #f)))
-                           ((l (3 #f)))))
+     (term (store-dom-diff ((l (4 #f Puttable)) (l1 (3 #f Puttable)))
+                           ((l (3 #f Puttable)))))
      (term (l1)))
 
     (test-equal
-     (term (store-dom-diff ((l (4 #f)))
+     (term (store-dom-diff ((l (4 #f Puttable)))
                            ()))
      (term (l)))
 
@@ -391,32 +395,32 @@
 
     (test-equal
      (cfgs-equal-modulo-perms?
-      '(((l (4 #f)) (l1 (3 #f))) ())
-      '(((l1 (3 #f)) (l (4 #f))) ()))
+      '(((l (4 #f Puttable)) (l1 (3 #f Puttable))) ())
+      '(((l1 (3 #f Puttable)) (l (4 #f Puttable))) ()))
      #t)
 
     (test-equal
      (cfgs-equal-modulo-perms?
-      '(((l1 (3 #f)) (l (4 #f))) ())
-      '(((l1 (3 #f)) (l (4 #f))) (3)))
+      '(((l1 (3 #f Puttable)) (l (4 #f Puttable))) ())
+      '(((l1 (3 #f Puttable)) (l (4 #f Puttable))) (3)))
      #f)
 
     (test-equal
      (cfgs-equal-modulo-perms?
-      '(((l (4 #f)) (l1 (3 #f))) ())
-      '(((l1 (3 #f)) (l (4 #f))) (3)))
+      '(((l (4 #f Puttable)) (l1 (3 #f Puttable))) ())
+      '(((l1 (3 #f Puttable)) (l (4 #f Puttable))) (3)))
      #f)
 
     (test-equal
      (cfgs-equal-modulo-perms?
-      '(((l (3 #f)) (l1 (4 #f))) ())
-      '(((l1 (3 #f)) (l (4 #f))) ()))
+      '(((l (3 #f Puttable)) (l1 (4 #f Puttable))) ())
+      '(((l1 (3 #f Puttable)) (l (4 #f Puttable))) ()))
      #f)
 
     (test-equal
-     (term (subst l l1 (((l (Bot #f)))
+     (term (subst l l1 (((l (Bot #f Puttable)))
                         (put l 3))))
-     (term (((l1 (Bot #f)))
+     (term (((l1 (Bot #f Puttable)))
             (put l1 3))))
 
     (test-results))
@@ -468,44 +472,52 @@
 
     (test-->> rr
               (term
-               (((l (3 #f)))
-                new))
+               (((l (3 #f Puttable)))
+                newPuttable))
               (term
-               (((l (3 #f)) (l1 (Bot #f)))
+               (((l (3 #f Puttable)) (l1 (Bot #f Puttable)))
                 l1)))
     
     (test-->> rr
               (term
-               (((l (3 #f)) (l1 (4 #f)))
-                new))
+               (((l (3 #f Puttable)) (l1 (4 #f Puttable)))
+                newPuttable))
               (term
-               (((l (3 #f)) (l1 (4 #f)) (l2 (Bot #f)))
+               (((l (3 #f Puttable)) (l1 (4 #f Puttable)) (l2 (Bot #f Puttable)))
                 l2)))
 
     (test-->> rr
               (term
-               (((l (Bot #f)))
+               (((l (3 #f Puttable)))
                 (put l 3)))
               (term
-               (((l (3 #f)))
+               (((l (3 #f Puttable)))
+                ())))
+
+    (test-->> rr
+              (term
+               (((l (Bot #f Puttable)))
+                (put l 3)))
+              (term
+               (((l (3 #f Puttable)))
                 ())))
     
     (test-->> rr
               (term
-               (((l (2 #f)))
+               (((l (2 #f Puttable)))
                 (put l 3)))
               (term
-               (((l (3 #f)))
+               (((l (3 #f Puttable)))
                 ())))
 
     ;; This should work because put just puts the max of the current
     ;; value and the new value.
     (test-->> rr
               (term
-               (((l (2 #f)))
+               (((l (2 #f Puttable)))
                 (put l 1)))
               (term
-               (((l (2 #f)))
+               (((l (2 #f Puttable)))
                 ())))
     
     ;; let
@@ -533,86 +545,86 @@
     (test-->> rr
               (term
                (() ;; empty store
-                ((lambda (x) x) new)))
+                ((lambda (x) x) newPuttable)))
               (term
-               (((l (Bot #f)))
+               (((l (Bot #f Puttable)))
                 l)))
 
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let ((x_2 (put x_1 3)))
-                    (let ((x_3 (get x_1 ((2 #f)))))
+                    (let ((x_3 (get x_1 ((2 #f Puttable)))))
                       x_3)))))
               (term
-               (((l (3 #f)))
-                (2 #f))))
+               (((l (3 #f Puttable)))
+                (2 #f Puttable))))
     
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par ((x_2 (put x_1 2))
                             (x_3 (put x_1 3)))
-                    (get x_1 ((2 #f)))))))
+                    (get x_1 ((2 #f Puttable)))))))
               (term
-               (((l (3 #f)))
-                (2 #f))))
+               (((l (3 #f Puttable)))
+                (2 #f Puttable))))
 
     ;; Another aspect of E-Put's behavior
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let ((x_2 (put x_1 5)))
                     ;; This should just take the lub of the old and new
                     ;; values, i.e., 5.
                     (let ((x_3 (put x_1 4)))
-                      (get x_1 ((5 #f))))))))
+                      (get x_1 ((5 #f Puttable))))))))
               (term
-               (((l (5 #f)))
-                (5 #f))))
+               (((l (5 #f Puttable)))
+                (5 #f Puttable))))
 
     (test-->> rr
               #:equiv cfgs-equal-modulo-perms?
               (term
                (()
-                (let par ([x_1 new]
-                          [x_2 new])
+                (let par ([x_1 newPuttable]
+                          [x_2 newPuttable])
                   (let par ([x_3 (put x_1 3)]
                             [x_4 (put x_2 4)])
-                    (get x_2 ((4 #f)))))))
+                    (get x_2 ((4 #f Puttable)))))))
               (term
-               (((l (3 #f))
-                 (l1 (4 #f)))
-                (4 #f)))
+               (((l (3 #f Puttable))
+                 (l1 (4 #f Puttable)))
+                (4 #f Puttable)))
               (term
-               (((l (4 #f))
-                 (l1 (3 #f)))
-                (4 #f))))
+               (((l (4 #f Puttable))
+                 (l1 (3 #f Puttable)))
+                (4 #f Puttable))))
     
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par ((x_2 (put x_1 2))
-                            (x_3 (get x_1 ((2 #f)))))
-                    (get x_1 ((2 #f)))))))
+                            (x_3 (get x_1 ((2 #f Puttable)))))
+                    (get x_1 ((2 #f Puttable)))))))
               (term
-               (((l (2 #f)))
-                (2 #f))))
+               (((l (2 #f Puttable)))
+                (2 #f Puttable))))
 
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ;; Gets stuck trying to get 4 out of x_1, then
                       ;; unstuck after the other subexpression finishes.
                       ((x_4 (let par ((x_2 (put x_1 2))
                                       (x_3 (put x_1 3)))
-                              (get x_1 ((4 #f)))))
+                              (get x_1 ((4 #f Puttable)))))
                        ;; Eventually puts 4 in x_1 after several dummy
                        ;; beta-reductions.
                        (x_5 ((lambda (x_2)
@@ -623,17 +635,17 @@
                                            (put x_1 4)) ())) ())) ())) ())) ())))
                     x_4))))
               (term
-               (((l (4 #f)))
-                (4 #f))))
+               (((l (4 #f Puttable)))
+                (4 #f Puttable))))
 
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let ((x_2 (put x_1 3)))
                     (freeze x_1)))))
               (term
-               (((l (3 #t)))
+               (((l (3 #t Puttable)))
                 3)))
 
     ;; Thresholding on frozenness.  The actual state of the LVar will
@@ -644,15 +656,15 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
-                      ((x_2 (get x_1 ((1 #t) (2 #t) (3 #t) (4 #t))))
+                      ((x_2 (get x_1 ((1 #t Puttable) (2 #t Puttable) (3 #t Puttable) (4 #t Puttable))))
                        (x_3 (freeze x_1 after (Bot) with (lambda (x)
                                                            (put x_1 3)))))
                     x_2))))
               (term
-               (((l (3 #t)))
-                (3 #t))))
+               (((l (3 #t Puttable)))
+                (3 #t Puttable))))
 
     ;; Here we have a quasi-deterministic program where a freeze-after
     ;; and a put are racing with each other.  One of two things will
@@ -662,14 +674,14 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ((x_2 (let ((x_4 (put x_1 3)))
                               (freeze x_1)))
                        (x_3 (put x_1 4)))
                     x_2))))
               (term
-               (((l (4 #t)))
+               (((l (4 #t Puttable)))
                 4))
               (term
                Error))
@@ -680,7 +692,7 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ((x_2 (let ((x_4 (put x_1 0)))
                               (freeze x_1 after (Bot) with (lambda (x)
@@ -688,7 +700,7 @@
                        (x_3 (put x_1 1)))
                     x_2))))
               (term
-               (((l (2 #t)))
+               (((l (2 #t Puttable)))
                 2)))
     
     ;; But this one is quasi-deterministic: if the racing put wins,
@@ -697,7 +709,7 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ((x_2 (let ((x_4 (put x_1 0)))
                               (freeze x_1 after (Bot) with (lambda (x)
@@ -705,7 +717,7 @@
                        (x_3 (put x_1 3)))
                     x_2))))
               (term
-               (((l (3 #t)))
+               (((l (3 #t Puttable)))
                 3))
               (term
                Error))
@@ -716,16 +728,16 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
-                  (let ((x_2 new))
+                (let ((x_1 newPuttable))
+                  (let ((x_2 newPuttable))
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with (lambda (x)
                                                              (put x_2 7))))
                          (x_4 (put x_2 5)))
                       x_3)))))
               (term
-               (((l (Bot #t))
-                 (l1 (7 #f)))
+               (((l (Bot #t Puttable))
+                 (l1 (7 #f Puttable)))
                 Bot)))
 
     ;; Just trying some weird things.  This program will fault if one
@@ -735,8 +747,8 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
-                  (let ((x_2 new))
+                (let ((x_1 newPuttable))
+                  (let ((x_2 newPuttable))
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with (lambda (x)
                                                              (put x_2 0))))
@@ -744,8 +756,8 @@
                                                              (put x_1 1)))))
                       x_3)))))
               (term
-               (((l (1 #t))
-                 (l1 (0 #t)))
+               (((l (1 #t Puttable))
+                 (l1 (0 #t Puttable)))
                 1))
               (term
                Error))
@@ -754,20 +766,20 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
-                  (let ((x_2 new))
+                (let ((x_1 newPuttable))
+                  (let ((x_2 newPuttable))
                     (let ((x_3 (freeze ((lambda (x) x) x_2))))
                       x_3)))))
               (term
-               (((l (Bot #f))
-                 (l1 (Bot #t)))
+               (((l (Bot #f Puttable))
+                 (l1 (Bot #t Puttable)))
                 Bot)))
     
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
-                  (let ((x_2 new))
+                (let ((x_1 newPuttable))
+                  (let ((x_2 newPuttable))
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with ((lambda (x)
                                                               (lambda (x)
@@ -779,8 +791,8 @@
                                                             ()))))
                       x_3)))))
               (term
-               (((l (1 #t))
-                 (l1 (0 #t)))
+               (((l (1 #t Puttable))
+                 (l1 (0 #t Puttable)))
                 1))
               (term
                Error))
@@ -788,9 +800,9 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
-                  (let ((x_2 new))
-                    (let ((x_3 new))
+                (let ((x_1 newPuttable))
+                  (let ((x_2 newPuttable))
+                    (let ((x_3 newPuttable))
                       (let par
                           ((x_3 (freeze x_1 after (Bot) with ((lambda (x)
                                                                 (lambda (x)
@@ -802,9 +814,9 @@
                                                               (put x_3 3)))))
                         x_3))))))
               (term
-               (((l (1 #t))
-                 (l1 (0 #t))
-                 (l2 (4 #f)))
+               (((l (1 #t Puttable))
+                 (l1 (0 #t Puttable))
+                 (l2 (4 #f Puttable)))
                 1))
               (term
                Error))
@@ -814,7 +826,7 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                         ((x_3 (freeze x_1 after (Bot) with (lambda (x)
                                                              (put x_1 0))))
@@ -822,7 +834,7 @@
                                                              (put x_1 1)))))
                       x_3))))
               (term
-               (((l (1 #t)))
+               (((l (1 #t Puttable)))
                 1))
               (term
                Error))

@@ -115,52 +115,56 @@
        (Bot 1)))
 
     (test-equal
-     (term (lub-p ((3 Bot) #f) ((3 6) #f)))
-     (term ((3 6) #f)))
+     (term (lub-p ((3 Bot) #f Puttable) ((3 6) #f Puttable)))
+     (term ((3 6) #f Puttable)))
 
     (test-equal
-     (term (incomp (((3 Bot) #f) ((Bot 4) #f))))
+     (term (incomp (((3 Bot) #f Puttable) ((Bot 4) #f Puttable))))
      (term #f))
 
     (test-equal
-     (term (incomp (((2 Bot) #f) ((3 Bot) #f) ((Bot 4) #f))))
+     (term (incomp (((2 Bot) #f Puttable) ((3 Bot) #f Puttable) ((Bot 4) #f Puttable))))
      (term #f))
 
     (test-equal
-     (term (incomp ((Bot #f) ((4 Bot) #f))))
+     (term (incomp ((Bot #f Puttable) ((4 Bot) #f Puttable))))
      (term #f))
 
     (test-equal
-     (term (incomp (((3 Bot) #f) ((4 Bot) #f))))
+     (term (incomp (((3 Bot) #f Puttable) ((4 Bot) #f Puttable))))
      (term #t))
 
     (test-equal
-     (term (incomp (((Bot 3) #f) ((Bot 4) #f))))
+     (term (incomp (((Bot 3) #f Puttable) ((Bot 4) #f Puttable))))
      (term #t))
 
     (test-equal
-     (term (incomp (((Bot 1) #f) ((Bot 2) #f) ((Bot 3) #f) ((Bot 4) #f) ((Bot 5) #f))))
+     (term (incomp (((Bot 1) #f Puttable) ((Bot 2) #f Puttable) ((Bot 3) #f Puttable) ((Bot 4) #f Puttable) ((Bot 5) #f Puttable))))
      (term #t))
 
     (test-equal
-     (term (incomp (((Bot 1) #f) ((Bot 2) #f) ((Bot 3) #f) ((Bot 4) #f) ((Bot 5) #f) ((1 Bot) #f))))
+     (term (incomp (((Bot 1) #f Puttable) ((Bot 2) #f Puttable) ((Bot 3) #f Puttable) ((Bot 4) #f Puttable) ((Bot 5) #f Puttable) ((1 Bot) #f Puttable))))
      (term #f))
 
     (test-equal
-     (term (incomp (((3 Bot) #t) ((Bot 4) #t))))
+     (term (incomp (((3 Bot) #t Puttable) ((Bot 4) #t Puttable))))
      (term #t))
 
     (test-equal
-     (term (incomp (((Bot 1) #t) ((1 Bot) #t))))
+     (term (incomp (((Bot 1) #t Puttable) ((1 Bot) #t Puttable))))
      (term #t))
 
     (test-equal
-     (term (lookup-status ((l ((2 3) #f))) l))
+     (term (lookup-status ((l ((2 3) #f Puttable))) l))
      (term #f))
 
     (test-equal
-     (term (lookup-status ((l ((2 3) #t))) l))
+     (term (lookup-status ((l ((2 3) #t Puttable))) l))
      (term #t))
+
+    (test-equal
+     (term (lookup-type ((l ((2 3) #t Puttable))) l))
+     (term Puttable))
 
     (test-equal
      (term (extend-H () (3 3)))
@@ -326,25 +330,25 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let ((x_2 (put x_1 (3 4))))
                     (freeze x_1)))))
               (term
-               (((l ((3 4) #t)))
+               (((l ((3 4) #t Puttable)))
                 (3 4))))
 
     ;; Quasi-determinism with freezing.
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ((x_2 (let ((x_4 (put x_1 (3 Bot))))
                               (freeze x_1)))
                        (x_3 (put x_1 (Bot 6))))
                     x_2))))
               (term
-               (((l ((3 6) #t)))
+               (((l ((3 6) #t Puttable)))
                 (3 6)))
               (term
                Error))
@@ -354,7 +358,7 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ((x_2 (let ((x_4 (put x_1 (3 4))))
                               ;; legal, incompatible 2-element
@@ -369,8 +373,8 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
-                  (let ((x_2 new))
+                (let ((x_1 newPuttable))
+                  (let ((x_2 newPuttable))
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with ((lambda (x)
                                                               (lambda (x)
@@ -382,8 +386,8 @@
                                                             ()))))
                       x_3)))))
               (term
-               (((l ((0 Bot) #t))
-                 (l1 ((Bot 0) #t)))
+               (((l ((0 Bot) #t Puttable))
+                 (l1 ((Bot 0) #t Puttable)))
                 (0 Bot)))
               (term
                Error))
@@ -394,7 +398,7 @@
     (test-->> rr
               (term
                (() ;; empty store
-                (let ((x_1 new))
+                (let ((x_1 newPuttable))
                   (let par
                       ((x_2 (get x_1 ((3 Bot) (Bot 6))))
                        (x_3 (put x_1 (6 6))))
@@ -404,7 +408,7 @@
               ;; reducing"?  This overspecifies; I don't really care
               ;; *how* it gets stuck.
               (term
-               (((l ((6 6) #f)))
+               (((l ((6 6) #f Puttable)))
                 (((lambda (x_2)
                     (lambda (x_3) x_2))
                   (get l ((3 Bot) (Bot 6))))
