@@ -57,6 +57,10 @@ before_script:
 # required packages without getting stuck on a confirmation prompt.
 script:
   - cd lambdaLVar && make all
+  - cd ..
+  - cd LVish && make all
+  - cd ..
+  - cd lambdaLVish && make all
 
 # NOTE: If your repo is a Racket package with an info.rkt that
 # includes some `deps`, the following is more elegant:
