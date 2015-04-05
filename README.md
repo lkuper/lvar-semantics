@@ -33,7 +33,7 @@ For lambdaLVar, this macro is called `define-lambdaLVar-language`.  It takes the
 
 For instance, to generate a language definition called `lambdaLVar-nat` where the lattice is the natural numbers with `max` as the least upper bound, one can write:
 
-```
+```racket
 (define-lambdaLVar-language lambdaLVar-nat max natural)
 ```
 
@@ -52,18 +52,18 @@ For LVish, this macro is called `define-LVish-language`.  It takes the following
 
 For instance, to generate a language definition called `LVish-nat` where the lattice is the natural numbers with `max` as the least upper bound, one can write:
 
-```
+```racket
 (define-LVish-language LVish-nat downset-op max natural)
 ```
 
 where `natural` is a Redex pattern, as described above, and `downset-op` is defined as
 
-```
-  (define downset-op
-    (lambda (d)
-      (if (number? d)
-          (append '(Bot) (iota d) `(,d))
-          '(Bot)))))
+```racket
+(define downset-op
+  (lambda (d)
+    (if (number? d)
+        (append '(Bot) (iota d) `(,d))
+        '(Bot)))))
 ```
 
 The file `LVish/nat.rkt` contains this instantiation and a test suite of programs for `LVish-nat`.  `LVish/natpair-ivars.rkt` contains another example instantiation.
@@ -80,13 +80,13 @@ For lambdaLVish, this macro is called `define-lambdaLVish-language`.  It takes t
 
 For instance, to generate a language definition called `lambdaLVish-nat` where the lattice is the natural numbers with `max` as the least upper bound, one can write:
 
-```
+```racket
 (define-lambaLVish-language lambdaLVish-nat downset-op max inflationary-op natural)
 ```
 
 where `natural` and `downset-op` are as above, and `inflationary-op` is defined as
 
-```
+```racket
 (define inflationary-op
   (lambda (d)
     (match d
@@ -106,7 +106,7 @@ One nice feature that Redex offers is the ability to see a graphical "trace" of 
   * Do `(require redex)`.  This will bring `traces` into scope.
   * Try tracing a term with the `traces` command: do `(traces <rr> <term>)` where `<rr>` is the reduction relation and `<term>` is some term in your instantiation of the model.  For example, for the language defined in `"nat.rkt"`, you can try:
 
-```
+```racket
 (traces rr (term
             (()
              (let ((x_1 newPuttable))
