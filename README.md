@@ -5,24 +5,23 @@ PLT Redex models of LVar calculi
 
 Subdirectories include:
 
-  * [lambdaLVish]: an updated version of the LVish calculus, as it appears in my 2015 dissertation ([see README](https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVish#readme)).
+  * [lambdaLVish]: a Redex model of the lambdaLVish calculus that appears in my 2015 dissertation ([see README](https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVish#readme)).
 
-  * [LVish]: a PLT Redex model of the LVish calculus, as it appeared in our POPL 2014 paper and accompanying tech report ([see README](https://github.com/lkuper/lvar-semantics/tree/master/LVish#readme)).
+  * [LVish]: a PLT Redex model of the LVish calculus that appears in our POPL 2014 paper and accompanying tech report ([see README](https://github.com/lkuper/lvar-semantics/tree/master/LVish#readme)).
 
-  * [lambdaLVar]: a PLT Redex model of the lambdaLVar calculus, as it appeared in our FHPC 2013 paper and accompanying tech report ([see README](https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVar#readme)).
+  * [lambdaLVar]: a PLT Redex model of the lambdaLVar calculus that appears in our FHPC 2013 paper and accompanying tech report ([see README](https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVar#readme)).
 
 [lambdaLVish]: https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVish
 [LVish]: https://github.com/lkuper/lvar-semantics/tree/master/LVish
 [lambdaLVar]: https://github.com/lkuper/lvar-semantics/tree/master/lambdaLVar
 
-### Modeling lattice parameterization in Redex
+### Modeling lattice parameterization in Redex, or, writing macros that write Redex models
 
-The lambdaLVish, LVish, and lambdaLVish calculi all have stores containing "lattice variables", or LVars. An LVar is a mutable store location whose contents can only increase over time, where the meaning of "increase" is given by a partially ordered set, or _lattice_, that the user of the language specifies.  Different instantiations of the lattice result in different languages.
+All the LVar calculi have stores containing "lattice variables", or LVars. An LVar is a mutable store location whose contents can only increase over time, where the meaning of "increase" is given by a partially ordered set, or _lattice_, that the user of the language specifies.  Different instantiations of the lattice result in different languages.
 
 In the Redex of today, it's not possible to parameterize a language
 definition by a lattice (see discussion
-[here](http://stackoverflow.com/questions/15800167/plt-redex-parameterizing-a-language-definition),
-for instance), so instead, we define a Racket macro that takes a lattice as arugment and *generates* a Redex language definition.
+[here](http://stackoverflow.com/questions/15800167/plt-redex-parameterizing-a-language-definition)).  So, instead, for each one of these Redex models we define a Racket macro that takes a lattice as arugment and *generates* a Redex language definition.
 
 #### `define-lambdaLVar-language`
 
