@@ -1,20 +1,15 @@
 # lambdaLVish in Redex
 
-lambdaLVish is the LVish calculus, but (1) renamed so as not to be
-confused with the LVish Haskell library, and (2) extended with support
-for `bump`.
+The code in this directory is a PLT Redex model of the lambdaLVish calculus from chapter 3 of [my dissertation](https://github.com/lkuper/dissertation).  lambdaLVish is similar to [the LVish calculus](https://github.com/lkuper/lvar-semantics/tree/master/LVish#readme), but (1) renamed so as not to be confused with [the LVish Haskell library](http://hackage.haskell.org/package/lvish), and (2) extended with support for arbitrary *update operations*.  Update operations generalize the `put` operation to allow not only least-upper-bound writes, but any inflationary write.
+
+This Redex model of lambdaLVish differs from the on-paper version of lambdaLVish in that, instead of allowing you to specify a family of inflationary update operations, you can only specify one inflationary operation.  Sorry!
 
 ### Version requirements
 
-The code has been tested under
-[various versions of Racket](https://travis-ci.org/lkuper/lvar-semantics).
-Other versions may also work.
+The code has been tested under [various versions of Racket](https://travis-ci.org/lkuper/lvar-semantics).  Other versions may also work.
 
-It will _not_ work under versions prior to 5.3.2 (released January
-2013).  This is because version 5.3.2 added support for the Redex
-`boolean` pattern, which the code makes use of.
+It will _not_ work under versions prior to 5.3.2 (released January 2013).  This is because version 5.3.2 added support for the Redex `boolean` pattern, which the code makes use of.
 
 ### Building and running
 
-Running `make all` in this directory will build all the lambdaLVish
-languages and run their test suites.
+Running `make all` in this directory will build all the lambdaLVish languages and run their test suites.
