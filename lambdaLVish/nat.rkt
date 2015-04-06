@@ -594,7 +594,7 @@
                (() ;; empty store
                 (let ((x_1 new))
                   (let par
-                      ;; Gets stuck trying to get 4 out of x_1, then
+                      ;; Gets stuck trying to get 3 out of x_1, then
                       ;; unstuck after the other subexpression finishes.
                       ((x_4 (let par ((x_2 (puti x_1 1))
                                       (x_3 (puti x_1 1)))
