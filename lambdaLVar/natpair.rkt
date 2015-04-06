@@ -9,6 +9,9 @@
     (natural Bot)
     (Bot natural))
 
+  ;; my-lub: A function that takes two pairs (they might be of the
+  ;; form (natural natural), (natural Bot), or (Bot natural)) and
+  ;; returns a pair that is their least upper bound.
   (define my-lub
     (lambda (p1 p2)
       (let* ([x_1 (car p1)]
@@ -21,7 +24,9 @@
 
   (define my-max 
     (lambda (z_1 z_2)
-      (cond 
+      (cond
+        [(equal? z_1 'Bot) z_2]
+        [(equal? z_2 'Bot) z_1]
         [(and (number? z_1) (number? z_2))
          (max z_1 z_2)]
         [(number? z_1)
