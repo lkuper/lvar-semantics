@@ -426,13 +426,239 @@
 
   (define (program-test-suite rr)
 
-    ;; FIXME: write programs
+    ;; E-App-1
+    (test-->> rr
+              (term
+               (() ;; empty store
+                ((lambda (x_1) x_1)
+                 ((lambda (x_1) x_1) (lambda (x_2) x_2)))))
+              (term
+               (()
+                (lambda (x_2) x_2))))
+
+    ;; E-App-2
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (((lambda (x_1) x_1) (lambda (x_2) x_2))
+                 (lambda (x_1) x_1))))
+              (term
+               (()
+                (lambda (x_1) x_1))))
+
+    ;; E-ParApp
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (((lambda (x_1) x_1) (lambda (x_2) x_2))
+                 ((lambda (x_1) x_1) (lambda (x_2) x_2)))))
+              (term
+               (()
+                (lambda (x_2) x_2))))
+
+    ;; E-Beta
+    (test-->> rr
+              (term
+               (() ;; empty store
+                ((lambda (x_1) x_1) ())))
+              (term
+               (()
+                ())))
+
+    (test-->> rr
+              (term
+               (() ;; empty store
+                ((lambda (x_1) x_1) (lambda (x_2) x_2))))
+              (term
+               (()
+                (lambda (x_2) x_2))))
+
+    ;; E-New
+    (test-->> rr
+              (term
+               (((l (3 3)))
+                new))
+              (term
+               (((l (3 3)) (l1 Bot))
+                l1)))
+
+    (test-->> rr
+              (term
+               (((l (3 3)) (l1 (4 4)))
+                new))
+              (term
+               (((l (3 3)) (l1 (4 4)) (l2 Bot))
+                l2)))
+
+    ;; E-PutVal
+    (test-->> rr
+              (term
+               (((l Bot))
+                (put l ((3 3)))))
+              (term
+               (((l (3 3)))
+                ())))
+
+    (test-->> rr
+              (term
+               (((l (Bot 3)))
+                (put l ((3 3)))))
+              (term
+               (((l (3 3)))
+                ())))
+
+    ;; let
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 (lambda (x_1) x_1)))
+                  (let ((x_2 (lambda (x_1) x_1)))
+                    (x_1 x_2)))))
+              (term
+               (()
+                (lambda (x_1) x_1))))
+
+    ;; let par
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let par ((x_1 (lambda (x_1) x_1))
+                          (x_2 (lambda (x_1) x_1)))
+                  (x_1 x_2))))
+              (term
+               (()
+                (lambda (x_1) x_1))))
+
+    ;; E-Beta + E-New
+    (test-->> rr
+              (term
+               (() ;; empty store
+                ((lambda (x) x) new)))
+              (term
+               (((l Bot))
+                l)))
+
+    ;; let + E-New + E-PutVal + E-GetVal
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let ((x_2 (put x_1 ((3 3)))))
+                    (let ((x_3 (get x_1 ((Bot 3)))))
+                      x_3)))))
+              (term
+               (((l (3 3)))
+                ((Bot 3)))))
+
+    ;; let par + E-New + E-PutVal + E-GetVal
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let par ((x_2 (put x_1 ((Bot 3))))
+                            (x_3 (put x_1 ((3 Bot)))))
+                    (get x_1 ((3 3)))))))
+              (term
+               (((l (3 3)))
+                ((3 3)))))
+
+    ;; Another aspect of E-PutVal's behavior
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let ((x_2 (put x_1 ((5 5)))))
+                    ;; This should just take the lub of the old and new
+                    ;; values, i.e., (5 5).
+                    (let ((x_3 (put x_1 ((Bot 5)))))
+                      (get x_1 ((5 5))))))))
+              (term
+               (((l (5 5)))
+                ((5 5)))))
+
+    ;; E-PutValErr
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let ((x_2 (put x_1 (Top))))
+                    x_2))))
+              (term
+               Error))
+
+    (test-->> rr
+              #:equiv cfgs-equal-modulo-perms?
+              (term
+               (()
+                (let par ([x_1 new]
+                          [x_2 new])
+                  (let par ([x_3 (put x_1 ((3 3)))]
+                            [x_4 (put x_2 ((4 4)))])
+                    (get x_2 ((4 4)))))))
+
+              ;; When we're using slow-rr, we can end up with a store
+              ;; of ((l (3 3)) (l1 (4 4))) or a permutation thereof --
+              ;; that is, x_1 is allocated first, followed by x_2.
+              ;; When we're using fast-rr, we always seem to get the
+              ;; allocation in the opposite order.  This is not
+              ;; nondeterministic in the sense that the result of
+              ;; reading x_2 is always the same, but it ends up at a
+              ;; different location in the store.  This is hack to
+              ;; account for that.
+              (if (equal? rr slow-rr)
+                  (term
+                   (((l (3 3))
+                     (l1 (4 4)))
+                    ((4 4))))
+                  (term
+                   (((l (4 4))
+                     (l1 (3 3)))
+                    ((4 4)))))
+              (term
+               (((l (4 4))
+                 (l1 (3 3)))
+                ((4 4)))))
+
+    ;;let par put and get
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let par ((x_2 (put x_1 ((2 2))))
+                            (x_3 (get x_1 ((2 2)))))
+                    (get x_1 ((2 2)))))))
+              (term
+               (((l (2 2)))
+                ((2 2)))))
 
     (test-results))
 
   (define (slow-program-test-suite rr)
 
-    ;; FIXME: slow tests go here, if any
+    ;; let par + E-New + E-PutVal + E-GetVal + E-GetValBlock
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let par
+                      ;; Gets stuck trying to get (4 4) out of x_1,
+                      ;; then unstuck after the other subexpression
+                      ;; finishes.
+                      ((x_4 (let par ((x_2 (put x_1 ((Bot 4))))
+                                      (x_3 (put x_1 (Bot))))
+                              (get x_1 ((4 4)))))
+                       ;; Eventually puts (4 4) in x_1 after several
+                       ;; dummy beta-reductions.
+                       (x_5 ((lambda (x_2)
+                               ((lambda (x_2)
+                                  ((lambda (x_2)
+                                     ((lambda (x_2)
+                                        ((lambda (x_2)
+                                           (put x_1 ((4 4)))) ())) ())) ())) ())) ())))
+                    x_4))))
+              (term
+               (((l (4 4)))
+                ((4 4)))))
     
     (test-results)))
 
