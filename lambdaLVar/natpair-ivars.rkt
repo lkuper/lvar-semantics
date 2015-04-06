@@ -208,6 +208,14 @@
      (term #f))
 
     (test-equal
+     (term (leq (3 3) (4 4)))
+     (term #f))
+
+    (test-equal
+     (term (leq (5 5) (4 4)))
+     (term #f))
+
+    (test-equal
      (term (store-dom ((l1 (4 4)) (l2 (5 5)) (l3 Bot))))
      (term (l1 l2 l3)))
 
