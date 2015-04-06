@@ -394,9 +394,12 @@
                        (x_3 (put x_1 (6 6))))
                     x_2))))
 
-              ;; FIXME: Is there a way to just specify "gets stuck
-              ;; reducing"?  This overspecifies; I don't really care
-              ;; *how* it gets stuck.
+              ;; N.B.: Here I wish I could just test for the property
+              ;; "gets stuck reducing" (since I don't really care
+              ;; *how* it gets stuck, just that it does get stuck),
+              ;; but the best way I can think of to test this in Redex
+              ;; is by actually specifying the term at which it gets
+              ;; stuck.
               (term
                (((l ((6 6) #f)))
                 (((lambda (x_2)
