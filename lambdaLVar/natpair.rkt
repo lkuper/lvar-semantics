@@ -689,7 +689,7 @@
               ;; allocation in the opposite order.  This is not
               ;; nondeterministic in the sense that the result of
               ;; reading x_2 is always the same, but it ends up at a
-              ;; different location in the store.  This is hack to
+              ;; different location in the store.  This is a hack to
               ;; account for that.
               (if (equal? rr slow-rr)
                   (term
