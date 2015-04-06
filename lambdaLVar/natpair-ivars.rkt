@@ -16,13 +16,16 @@
 
   ;; Because they're IVars, we can only safely combine two pairs if
   ;; one of them has only the car filled in, and the other has only
-  ;; the cadr filled in.
+  ;; the cadr filled in -- or if whatever they're filled in with is
+  ;; the same.
 
-  ;; assumes that a1 and a2 aren't both numbers
+  ;; assumes that a1 and a2 aren't both numbers, or if they are then
+  ;; they're the same
   (define lub-helper
     (lambda (a1 a2)
       (cond
-        [(and (number? a1) (number? a2))
+        [(and (number? a1) (number? a2) (equal? a1 a2)) a1]
+        [(and (number? a1) (number? a2) (not (equal? a1 a2)))
          ;; If we get here, something's wrong
          (error "oops!")]
         [(number? a1) a1]
@@ -40,13 +43,13 @@
           ;; nat/Bot, nat/nat
           ;; nat/nat, nat/Bot
           ;; nat/nat, nat/nat
-          [(and (number? car1) (number? car2))
+          [(and (number? car1) (number? car2) (not (equal? car1 car2)))
            'Top]
 
           ;; Bot/nat, Bot/nat
           ;; nat/nat, Bot/nat
           ;; Bot/nat, nat/nat
-          [(and (number? cadr1) (number? cadr2))
+          [(and (number? cadr1) (number? cadr2) (not (equal? cadr1 cadr2)))
            'Top]
 
           ;; nat/Bot, Bot/nat
