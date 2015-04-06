@@ -61,6 +61,7 @@
 (module test-suite racket
   (require redex/reduction-semantics)
   (require (submod ".." language))
+  (require srfi/1)
   (require "test-helpers.rkt")
 
   (provide
@@ -122,7 +123,304 @@
      (term (incomp ((Bot 1) (Bot 2) (Bot 3) (Bot 4) (Bot 5) (1 Bot))))
      (term #f))
 
-    ;; FIXME: write more tests
+    (test-equal
+     (term (exists-d (Bot 1) ()))
+     (term #f))
+
+    (test-equal
+     (term (exists-d (Bot 6) (Bot)))
+     (term Bot))
+
+    (test-equal
+     (term (exists-d (Bot 6) ((Bot 9))))
+     (term #f))
+
+    (test-equal
+     (term (exists-d (Bot 3) ((Bot 3))))
+     (term (Bot 3)))
+
+    (test-equal
+     (term (exists-d (Bot 6) ((Bot 7) (Bot 8) (Bot 9))))
+     (term #f))
+
+    (test-equal
+     (term (exists-d (Bot 6) ((Bot 7) (Bot 8) (Bot 9) (Bot 6))))
+     (term (Bot 6)))
+
+    (test-equal
+     (term (exists-d (Bot 6) ((Bot 7) (Bot 8) (Bot 9) Bot)))
+     (term Bot))
+
+    (test-equal
+     (term (exists-d (6 6) ((Bot 7) (Bot 8) (Bot 9) (Bot 6))))
+     (term (Bot 6)))
+
+    (test-equal
+     (term (lub Bot Bot))
+     (term Bot))
+
+    (test-equal
+     (term (lub Top (Bot 3)))
+     (term Top))
+
+    (test-equal
+     (term (lub (3 Bot) (Bot 4)))
+     (term (3 4)))
+
+    (test-equal
+     (term (lub (3 3) (3 3)))
+     (term (3 3)))
+
+    (test-equal
+     (term (leq (3 3) (3 3)))
+     (term #t))
+
+    (test-equal
+     (term (leq Top (3 3)))
+     (term #f))
+
+    (test-equal
+     (term (leq (3 3) Top))
+     (term #t))
+
+    (test-equal
+     (term (leq Bot (3 3)))
+     (term #t))
+
+    (test-equal
+     (term (leq (3 3) Bot))
+     (term #f))
+
+    (test-equal
+     (term (leq Top Bot))
+     (term #f))
+
+    (test-equal
+     (term (leq Bot Top))
+     (term #t))
+
+    (test-equal
+     (term (leq (Bot 3) (3 3)))
+     (term #t))
+
+    (test-equal
+     (term (leq (3 3) (Bot 3)))
+     (term #f))
+
+    (test-equal
+     (term (store-dom ((l1 (4 4)) (l2 (5 5)) (l3 Bot))))
+     (term (l1 l2 l3)))
+
+    (test-equal
+     (stores-equal-modulo-perms?
+      (term (lubstore ((l1 (5 5))
+                       (l2 (6 6))
+                       (l3 (7 7)))
+                      ((l2 (6 6))
+                       (l4 (9 9)))))
+      (term ((l1 (5 5))
+             (l3 (7 7))
+             (l2 (6 6))
+             (l4 (9 9)))))
+     #t)
+
+    (test-equal
+     (stores-equal-modulo-perms?
+      (term (lubstore ((l1 (5 5))
+                       (l2 (6 6))
+                       (l3 (7 7)))
+                      ((l1 (5 5))
+                       (l4 (9 9))
+                       (l2 (6 6)))))
+      (term ((l3 (7 7))
+             (l1 (5 5))
+             (l4 (9 9))
+             (l2 (6 6)))))
+     #t)
+
+    (test-equal
+     (stores-equal-modulo-perms?
+      (term (lubstore ((l1 Bot)
+                       (l2 (6 6))
+                       (l3 Bot))
+                      ((l1 (5 5))
+                       (l4 (9 9))
+                       (l2 (6 6)))))
+      (term ((l3 Bot)
+             (l1 (5 5))
+             (l4 (9 9))
+             (l2 (6 6)))))
+     #t)
+
+    (test-equal
+     (term (lubstore-helper ((l1 (5 5)))
+                            ()
+                            l1))
+     (term (5 5)))
+
+    (test-equal
+     (term (lubstore-helper ((l1 (Bot 6)))
+                            ((l1 (6 6)))
+                            l1))
+     (term (6 6)))
+
+    (test-equal
+     (term (lubstore-helper ((l1 (5 5))
+                             (l2 (6 6))
+                             (l3 (7 7)))
+                            ((l2 (6 6))
+                             (l4 (9 9)))
+                            l2))
+     (term (6 6)))
+
+    (test-equal
+     (lset= equal?
+            (lset-union equal? (term ()) (term ()))
+            (term ()))
+     #t)
+
+    (test-equal
+     (lset= equal?
+            (lset-union equal? (term ()) (term (l1)))
+            (term (l1)))
+     #t)
+
+    (test-equal
+     (lset= equal?
+            (lset-union equal? (term (l1 l2)) (term (l1 l2 l3)))
+            (term (l1 l2 l3)))
+     #t)
+
+    (test-equal
+     (lset= equal?
+            (lset-union equal? (term (l2 l3)) (term (l1 l4)))
+            (term (l2 l3 l1 l4)))
+     #t)
+
+    (test-equal
+     (lset= equal?
+            (lset-union equal? (term (l2 l3)) (term (l1 l2 l4)))
+            (term (l3 l1 l2 l4)))
+     #t)
+
+    (test-equal
+     (term (store-lookup ((l (2 2))) l))
+     (term (2 2)))
+
+    (test-equal
+     (term (store-update () l (4 4)))
+     (term ((l (4 4)))))
+
+    (test-equal
+     (term (store-update ((l (Bot 4))) l (4 4)))
+     (term ((l (4 4)))))
+
+    (test-equal
+     (term (store-update () l Bot))
+     (term ((l Bot))))
+
+    (test-equal
+     (term (valid ()))
+     #f)
+
+    (test-equal
+     (term (valid ((3 3))))
+     #t)
+
+    (test-equal
+     (term (valid ((5 5) (6 6) (7 7))))
+     #t)
+
+    (test-equal
+     (term (store-dom ()))
+     (term ()))
+
+    (test-equal
+     (term (store-dom ((l (3 3)) (l1 (4 4)))))
+     (term (l l1)))
+
+    (test-equal
+     (term (store-dom-diff ((l (3 3)) (l1 (4 4)))
+                           ((l (4 4)) (l1 (3 3)))))
+     (term ()))
+
+    (test-equal
+     (term (store-dom-diff ((l (3 3)))
+                           ((l (4 4)) (l1 (3 3)))))
+     (term ()))
+
+    (test-equal
+     (term (store-dom-diff ((l (4 4)) (l1 (3 3)))
+                           ((l (3 3)))))
+     (term (l1)))
+
+    (test-equal
+     (term (store-dom-diff ((l (4 4)))
+                           ()))
+     (term (l)))
+
+    (test-equal
+     (term (rename-locs (((l Bot))
+                         (put l ((3 3))))
+                        ((l (4 4)))
+                        ()))
+     (term
+      (((l1 Bot))
+       (put l1 ((3 3))))))
+
+    (test-equal
+     (term (store-top? ()))
+     (term #f))
+
+    (test-equal
+     (term (store-top? ((l (3 3)) (l1 (4 4)))))
+     (term #f))
+
+    (test-equal
+     (term (store-top? TopS))
+     (term #t))
+
+    (test-equal
+     (term (top? Top))
+     (term #t))
+
+    (test-equal
+     (term (top? Bot))
+     (term #f))
+
+    (test-equal
+     (term (top? (3 3)))
+     (term #f))
+
+    (test-equal
+     (cfgs-equal-modulo-perms?
+      '(((l (4 4)) (l1 (3 3))) ())
+      '(((l1 (3 3)) (l (4 4))) ()))
+     #t)
+
+    (test-equal
+     (cfgs-equal-modulo-perms?
+      '(((l1 (3 3)) (l (4 4))) ())
+      '(((l1 (3 3)) (l (4 4))) ((3 3))))
+     #f)
+
+    (test-equal
+     (cfgs-equal-modulo-perms?
+      '(((l (4 4)) (l1 (3 3))) ())
+      '(((l1 (3 3)) (l (4 4))) ((3 3))))
+     #f)
+
+    (test-equal
+     (cfgs-equal-modulo-perms?
+      '(((l (3 3)) (l1 (4 4))) ())
+      '(((l1 (3 3)) (l (4 4))) ()))
+     #f)
+
+    (test-equal
+     (term (subst l l1 (((l Bot))
+                        (put l ((3 3))))))
+     (term (((l1 Bot))
+            (put l1 ((3 3))))))
 
     (test-results))
 
