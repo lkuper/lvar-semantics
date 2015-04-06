@@ -418,12 +418,6 @@
       '(((l1 (3 #f)) (l (4 #f))) ()))
      #f)
 
-    (test-equal
-     (term (subst l l1 (((l (Bot #f)))
-                        (puti l 3))))
-     (term (((l1 (Bot #f)))
-            (puti l1 3))))
-
     (test-results))
 
   (define (program-test-suite rr)
