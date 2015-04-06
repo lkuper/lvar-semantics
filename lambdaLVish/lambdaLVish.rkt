@@ -15,8 +15,8 @@
 ;;   * a lub operation, a Racket-level procedure that takes two
 ;;     lattice elements and returns a lattice element.
 ;;
-;;   * an update operation, a Racket-level procedure that takes
-;;     a lattice element and returns a lattice element.
+;;   * a list of update operations, Racket-level procedures that each
+;;     take a lattice element and return a lattice element.
 ;;
 ;;   * some number of lattice elements represented as Redex patterns,
 ;;     not including top and bottom elements, since we add those
@@ -24,11 +24,15 @@
 ;;     only of Top and Bot, we wouldn't pass any lattice elements to
 ;;     define-lambdaLVish-language.)
 
+;; When reading lambdaLVish programs, keep in mind that the last
+;; argument to `puti` is the *index into the (1-indexed) list of
+;; update operations*, *not* the value being written!
+
 (define-syntax-rule (define-lambdaLVish-language
                       name
                       downset-op
                       lub-op
-                      update-op
+                      update-ops
                       lattice-elements ...)
   (begin
     (require redex/reduction-semantics)
@@ -69,7 +73,7 @@
          v
          (e e)
          (get e e)
-         (puti e)
+         (puti e idx)
          new
          (freeze e)
          (freeze e after e with e)
@@ -116,6 +120,11 @@
       ;; every place we use StoreVal here.
       (d StoreVal Top)
       (StoreVal lattice-elements ... Bot)
+
+      ;; This isn't in the LaTeX grammar either.  It's just a way to
+      ;; index into the specified list of update operations to get the
+      ;; one we want to use.
+      (idx natural)
 
       ;; Threshold sets.  A threshold set is the set we pass to a
       ;; `get` expression that specifies a non-empty, pairwise
@@ -168,7 +177,7 @@
          (e E)
          (get E e)
          (get e E)
-         (puti E)
+         (puti E idx)
          (freeze E)
          (freeze E after e with e)
          (freeze e after E with e)
@@ -199,18 +208,18 @@
             "E-New")
 
        ;; Update.
-       (--> (S (in-hole E (puti l)))
+       (--> (S (in-hole E (puti l idx)))
             ((update-state S l p_2) (in-hole E ()))
             (where p_1 (lookup-state S l))
-            (where p_2 (u-p p_1))
+            (where p_2 (u-p p_1 idx))
             (where (StoreVal status) p_2)
             "E-Put")
 
        ;; Update that would lead to an error.
-       (--> (S (in-hole E (puti l)))
+       (--> (S (in-hole E (puti l idx)))
             Error
             (where p_1 (lookup-state S l))
-            (where Top-p (u-p p_1))
+            (where Top-p (u-p p_1 idx))
             "E-Put-Err")
        
        ;; Threshold reads from LVars.  The `incomp` and `exists-p`
@@ -454,18 +463,19 @@
       ;; than both d_1 and d_2.  In this case, (not (leq d_1 d_2)).
       [(leq d_1 d_2) #f])
 
-    ;; The update operation, defined in terms of the
-    ;; user-provided update-op.
+    ;; The update operation, defined in terms of the user-provided
+    ;; update-ops.  The `sub1` is so the list can be 1-indexed, to
+    ;; match the paper version.
     (define-metafunction name
-      u : d -> d
-      [(u d) ,(update-op (term d))])
+      u : d idx -> d
+      [(u d idx) ,((list-ref update-ops (sub1 (term idx))) (term d))])
 
     ;; The update operation, but extended to handle status bits.
     (define-metafunction name
-      u-p : p -> p
-      [(u-p (d #f)) ((u d) #f)]
-      [(u-p (d #t))
-       ,(if (equal? (term (u d)) (term d))
+      u-p : p idx -> p
+      [(u-p (d #f) idx) ((u d idx) #f)]
+      [(u-p (d #t) idx)
+       ,(if (equal? (term (u d idx)) (term d))
             (term (d #t))
             (term Top-p))])
 

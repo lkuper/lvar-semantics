@@ -5,7 +5,7 @@
   (require srfi/1)
   (provide lambdaLVish-nat)
   
-  (define-lambdaLVish-language lambdaLVish-nat downset-op max update-op natural)
+  (define-lambdaLVish-language lambdaLVish-nat downset-op max update-ops natural)
 
   ;; To figure out at some point: maybe we could actually write
   ;; downset-op with Redex patterns?
@@ -16,11 +16,19 @@
           (append '(Bot) (iota d) `(,d))
           '(Bot))))
 
-  (define update-op
+  (define update-op-1
     (lambda (d)
       (match d
         ['Bot 1]
-        [number (add1 d)]))))
+        [number (add1 d)])))
+
+  (define update-op-2
+    (lambda (d)
+      (match d
+        ['Bot 2]
+        [number (add1 (add1 d))])))
+
+  (define update-ops `(,update-op-1 ,update-op-2)))
 
 (module test-suite racket
   (require redex/reduction-semantics)
@@ -482,15 +490,23 @@
     (test-->> rr
               (term
                (((l (3 #f)))
-                (puti l)))
+                (puti l 1)))
               (term
                (((l (4 #f)))
                 ())))
 
     (test-->> rr
               (term
+               (((l (3 #f)))
+                (puti l 2)))
+              (term
+               (((l (5 #f)))
+                ())))
+
+    (test-->> rr
+              (term
                (((l (Bot #f)))
-                (puti l)))
+                (puti l 1)))
               (term
                (((l (1 #f)))
                 ())))
@@ -498,7 +514,7 @@
     (test-->> rr
               (term
                (((l (2 #f)))
-                (puti l)))
+                (puti l 1)))
               (term
                (((l (3 #f)))
                 ())))
@@ -537,7 +553,7 @@
               (term
                (() ;; empty store
                 (let ((x_1 new))
-                  (let ((x_2 (puti x_1)))
+                  (let ((x_2 (puti x_1 1)))
                     (let ((x_3 (get x_1 ((1 #f)))))
                       x_3)))))
               (term
@@ -548,8 +564,8 @@
               (term
                (() ;; empty store
                 (let ((x_1 new))
-                  (let par ((x_2 (puti x_1))
-                            (x_3 (puti x_1)))
+                  (let par ((x_2 (puti x_1 1))
+                            (x_3 (puti x_1 1)))
                     (get x_1 ((2 #f)))))))
               (term
                (((l (2 #f)))
@@ -560,8 +576,8 @@
                (()
                 (let par ([x_1 new]
                           [x_2 new])
-                  (let par ([x_3 (puti x_1)]
-                            [x_4 (puti x_2)])
+                  (let par ([x_3 (puti x_1 1)]
+                            [x_4 (puti x_2 1)])
                     (get x_2 ((1 #f)))))))
               (term
                (((l (1 #f))
@@ -572,7 +588,7 @@
               (term
                (() ;; empty store
                 (let ((x_1 new))
-                  (let par ((x_2 (puti x_1))
+                  (let par ((x_2 (puti x_1 1))
                             (x_3 (get x_1 ((1 #f)))))
                     (get x_1 ((1 #f)))))))
               (term
@@ -586,8 +602,8 @@
                   (let par
                       ;; Gets stuck trying to get 4 out of x_1, then
                       ;; unstuck after the other subexpression finishes.
-                      ((x_4 (let par ((x_2 (puti x_1))
-                                      (x_3 (puti x_1)))
+                      ((x_4 (let par ((x_2 (puti x_1 1))
+                                      (x_3 (puti x_1 1)))
                               (get x_1 ((3 #f)))))
                        ;; Eventually puts 3 in x_1 after several dummy
                        ;; beta-reductions.
@@ -596,7 +612,7 @@
                                   ((lambda (x_2)
                                      ((lambda (x_2)
                                         ((lambda (x_2)
-                                           (puti x_1)) ())) ())) ())) ())) ())))
+                                           (puti x_1 1)) ())) ())) ())) ())) ())))
                     x_4))))
               (term
                (((l (3 #f)))
@@ -606,7 +622,7 @@
               (term
                (() ;; empty store
                 (let ((x_1 new))
-                  (let ((x_2 (puti x_1)))
+                  (let ((x_2 (puti x_1 1)))
                     (freeze x_1)))))
               (term
                (((l (1 #t)))
@@ -620,11 +636,24 @@
                   (let par
                       ((x_2 (get x_1 ((1 #t))))
                        (x_3 (freeze x_1 after (Bot) with (lambda (x)
-                                                           (puti x_1)))))
+                                                           (puti x_1 1)))))
                     x_2))))
               (term
                (((l (1 #t)))
                 (1 #t))))
+
+    ;; Mixing different update operations is fine, since they commute.
+    (test-->> rr
+              (term
+               (() ;; empty store
+                (let ((x_1 new))
+                  (let par
+                      ((x_2 (puti x_1 1))
+                       (x_3 (puti x_1 2)))
+                    (freeze x_1)))))
+              (term
+               (((l (3 #t)))
+                3)))
 
     ;; Here we have a quasi-deterministic program where a freeze and a
     ;; put are racing with each other.  One of two things will happen:
@@ -636,9 +665,9 @@
                (() ;; empty store
                 (let ((x_1 new))
                   (let par
-                      ((x_2 (let ((x_4 (puti x_1)))
+                      ((x_2 (let ((x_4 (puti x_1 1)))
                               (freeze x_1)))
-                       (x_3 (puti x_1)))
+                       (x_3 (puti x_1 1)))
                     x_2))))
               (term
                (((l (2 #t)))
@@ -653,10 +682,10 @@
                (() ;; empty store
                 (let ((x_1 new))
                   (let par
-                      ((x_2 (let ((x_4 (puti x_1)))
+                      ((x_2 (let ((x_4 (puti x_1 1)))
                               (freeze x_1 after (Bot) with (lambda (x)
-                                                             (puti x_1)))))
-                       (x_3 (puti x_1)))
+                                                             (puti x_1 1)))))
+                       (x_3 (puti x_1 1)))
                     x_2))))
               (term
                (((l (3 #t)))
@@ -674,8 +703,8 @@
                   (let ((x_2 new))
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with (lambda (x)
-                                                             (puti x_2))))
-                         (x_4 (puti x_2)))
+                                                             (puti x_2 1))))
+                         (x_4 (puti x_2 1)))
                       x_3)))))
               (term
                (((l (Bot #t))
@@ -693,9 +722,9 @@
                   (let ((x_2 new))
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with (lambda (x)
-                                                             (puti x_2))))
+                                                             (puti x_2 1))))
                          (x_4 (freeze x_2 after (Bot) with (lambda (x)
-                                                             (puti x_1)))))
+                                                             (puti x_1 1)))))
                       x_3)))))
               (term
                (((l (1 #t))
@@ -725,11 +754,11 @@
                     (let par
                         ((x_3 (freeze x_1 after (Bot) with ((lambda (x)
                                                               (lambda (x)
-                                                                (puti x_2)))
+                                                                (puti x_2 1)))
                                                             ())))
                          (x_4 (freeze x_2 after (Bot) with ((lambda (x)
                                                               (lambda (x)
-                                                                (puti x_1)))
+                                                                (puti x_1 1)))
                                                             ()))))
                       x_3)))))
               (term
@@ -748,12 +777,12 @@
                       (let par
                           ((x_3 (freeze x_1 after (Bot) with ((lambda (x)
                                                                 (lambda (x)
-                                                                  (puti x_2)))
-                                                              (puti x_3))))
+                                                                  (puti x_2 1)))
+                                                              (puti x_3 1))))
                            (x_4 (freeze x_2 after (Bot) with ((lambda (x)
                                                                 (lambda (x)
-                                                                  (puti x_1)))
-                                                              (puti x_3)))))
+                                                                  (puti x_1 1)))
+                                                              (puti x_3 1)))))
                         x_3))))))
               (term
                (((l (1 #t))
@@ -772,10 +801,10 @@
                   (let par
                         ((x_3 (freeze x_1 after (Bot) with ((lambda (x)
                                                               (lambda (x)
-                                                                (puti x_1)))
-                                                            (puti x_1))))
+                                                                (puti x_1 1)))
+                                                            (puti x_1 1))))
                          (x_4 (freeze x_1 after (Bot) with (lambda (x)
-                                                             (puti x_1)))))
+                                                             (puti x_1 1)))))
                       x_3))))
               (term
                (((l (3 #t)))

@@ -75,7 +75,7 @@ For lambdaLVish, this macro is called `define-lambdaLVish-language`.  It takes t
   * a *name*, e.g. lambdaLVish-nat, which becomes the `lang-name` passed to Redex's `define-language` form.
   * a *"downset" operation*, a Racket-level procedure that takes a lattice element and returns the (finite) set of all lattice elements that are below that element.
   * a *lub operation*, a Racket-level procedure that takes two lattice elements and returns a lattice element.
-  * an *update operation*, a Racket-level procedure that takes a lattice element and returns a lattice element.
+  * a list of *update operations*, Racket-level procedures that each take a lattice element and return a lattice element.
   * some number of *lattice elements* represented as Redex patterns, not including top and bottom elements, since we add those automatically.
 
 For instance, to generate a language definition called `lambdaLVish-nat` where the lattice is the natural numbers with `max` as the least upper bound, one can write:
