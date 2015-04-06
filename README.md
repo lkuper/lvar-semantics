@@ -45,7 +45,7 @@ The file `lambdaLVar/nat.rkt` contains this instantiation and a test suite of pr
 
 For LVish, this macro is called `define-LVish-language`.  It takes the following arguments:
 
-  * a *name*, e.g. LVish-nat, which becomes the `lang-name` passed to Redex's `define-language` form.
+  * a *name*, e.g., `LVish-nat`, which becomes the `lang-name` passed to Redex's `define-language` form.
   * a *"downset" operation*, a Racket-level procedure that takes a lattice element and returns the (finite) set of all lattice elements that are below that element.  The downset operation is used to implement the `freeze ... after ... with` primitive in LVish.
   * a *lub operation*, a Racket-level procedure that takes two lattice elements and returns a lattice element.
   * some number of Redex patterns representing *lattice elements*, not including top and bottom elements, since we add those automatically.
@@ -56,7 +56,7 @@ For instance, to generate a language definition called `LVish-nat` where the lat
 (define-LVish-language LVish-nat downset-op max natural)
 ```
 
-where `natural` is a Redex pattern, as described above, and `downset-op` is defined as
+where `natural` is a Redex pattern, as described above, and `downset-op` is defined as follows:
 
 ```racket
 (define downset-op
@@ -72,46 +72,54 @@ The file `LVish/nat.rkt` contains this instantiation and a test suite of program
 
 For lambdaLVish, this macro is called `define-lambdaLVish-language`.  It takes the following arguments:
 
-  * a *name*, e.g. lambdaLVish-nat, which becomes the `lang-name` passed to Redex's `define-language` form.
+  * a *name*, e.g., `lambdaLVish-nat`, which becomes the `lang-name` passed to Redex's `define-language` form.
   * a *"downset" operation*, a Racket-level procedure that takes a lattice element and returns the (finite) set of all lattice elements that are below that element.
   * a *lub operation*, a Racket-level procedure that takes two lattice elements and returns a lattice element.
   * a list of *update operations*, Racket-level procedures that each take a lattice element and return a lattice element.
   * some number of *lattice elements* represented as Redex patterns, not including top and bottom elements, since we add those automatically.
 
-For instance, to generate a language definition called `lambdaLVish-nat` where the lattice is the natural numbers with `max` as the least upper bound, one can write:
+For instance, to generate a language definition called `lambdaLVish-nat` where the lattice is the non-negative integers ordered in the usual way, and there are two update operations which respectively increment the contents of an LVar by one and two, one could write:
 
 ```racket
-(define-lambaLVish-language lambdaLVish-nat downset-op max update-op natural)
+(define-lambaLVish-language lambdaLVish-nat downset-op max update-ops natural)
 ```
 
-where `natural` and `downset-op` are as above, and `update-op` is defined as
+where `natural` and `downset-op` are as above, and `update-op` is defined as follows:
 
 ```racket
-(define update-op
+(define update-op-1
   (lambda (d)
     (match d
       ['Bot 1]
-      [number (add1 d)]))))
+      [number (add1 d)])))
+
+(define update-op-2
+  (lambda (d)
+    (match d
+      ['Bot 2]
+      [number (add1 (add1 d))])))
+
+(define update-ops `(,update-op-1 ,update-op-2))
 ```
 
 The file `lambdaLVish/nat.rkt` contains this instantiation and a test suite of programs for `lambdaLVish-nat`.
 
-The `update-op` procedure is how we model update operations.  If the Redex model matched the on-paper version of lambdaLVish, we could pass in a *set* of update operations, not just one, but this is what the model can handle for now.
-
 ## Reduction traces
 
-One nice feature that Redex offers is the ability to see a graphical "trace" of the reduction of a term (that is, the running of a program) in DrRacket.  In order to use the trace feature with one of these Redex model, you have to first instantiate the model with a lattice.  Open the file for the instantiatiion you want to use (such as `"nat.rkt"`), and click the "Run" button to open a REPL.  Then, in the REPL:
+One nice feature that Redex offers is the ability to see a graphical "trace" of the reduction of a term (that is, the running of a program) in DrRacket.  In order to use the trace feature with one of these Redex models, you have to first instantiate the model with a lattice.  Open the file for the instantiation you want to use (such as `"nat.rkt"`), and click the "Run" button to open a REPL.  Then, in the REPL:
 
-  * Do `(require (submod "." language))`.  This will bring the definition of the reduction relation into scope.
-  * Do `(require redex)`.  This will bring `traces` into scope.
-  * Try tracing a term with the `traces` command: do `(traces <rr> <term>)` where `<rr>` is the reduction relation and `<term>` is some term in your instantiation of the model.  For example, for the language defined in `"nat.rkt"`, you can try:
+  * `(require (submod "." language))`.  This will bring the definition of the reduction relation into scope.
+  * `(require redex)`.  This will bring `traces` into scope.
+  * Try tracing a term with the `traces` command: `(traces <rr> <term>)` where `<rr>` is the reduction relation and `<term>` is some term in your instantiation of the model.  For example, for the language defined in `"nat.rkt"`, you can try:
 
 ```racket
 (traces rr (term
             (()
-             (let ((x_1 newPuttable))
-               (let ((x_2 (put x_1 3)))
-                 (freeze x_1))))))
+             (let ((x_1 new))
+               (let par
+                   ((x_2 (puti x_1 1))
+                    (x_3 (puti x_1 2)))
+                 (freeze x_1)))))
 ```
 
 This will open a window showing a reduction graph.
