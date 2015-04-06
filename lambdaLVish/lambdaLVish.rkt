@@ -15,7 +15,7 @@
 ;;   * a lub operation, a Racket-level procedure that takes two
 ;;     lattice elements and returns a lattice element.
 ;;
-;;   * an inflationary operation, a Racket-level procedure that takes
+;;   * an update operation, a Racket-level procedure that takes
 ;;     a lattice element and returns a lattice element.
 ;;
 ;;   * some number of lattice elements represented as Redex patterns,
@@ -28,7 +28,7 @@
                       name
                       downset-op
                       lub-op
-                      inflationary-op
+                      update-op
                       lattice-elements ...)
   (begin
     (require redex/reduction-semantics)
@@ -454,13 +454,13 @@
       ;; than both d_1 and d_2.  In this case, (not (leq d_1 d_2)).
       [(leq d_1 d_2) #f])
 
-    ;; The inflationary operation, defined in terms of the
-    ;; user-provided inflationary-op.
+    ;; The update operation, defined in terms of the
+    ;; user-provided update-op.
     (define-metafunction name
       u : d -> d
-      [(u d) ,(inflationary-op (term d))])
+      [(u d) ,(update-op (term d))])
 
-    ;; The inflationary operation, but extended to handle status bits.
+    ;; The update operation, but extended to handle status bits.
     (define-metafunction name
       u-p : p -> p
       [(u-p (d #f)) ((u d) #f)]

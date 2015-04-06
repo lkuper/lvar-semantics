@@ -21,7 +21,7 @@ All the LVar calculi have stores containing "lattice variables", or LVars. An LV
 
 In the Redex of today, it's not possible to parameterize a language
 definition by a lattice (see discussion
-[here](http://stackoverflow.com/questions/15800167/plt-redex-parameterizing-a-language-definition)).  So, instead, for each one of these Redex models we define a Racket macro that takes a lattice as arugment and *generates* a Redex language definition.
+[here](http://stackoverflow.com/questions/15800167/plt-redex-parameterizing-a-language-definition)).  So, instead, for each one of these Redex models we define a Racket macro that takes a lattice as one of its arguments and *generates* a Redex language definition.
 
 #### `define-lambdaLVar-language`
 
@@ -75,19 +75,19 @@ For lambdaLVish, this macro is called `define-lambdaLVish-language`.  It takes t
   * a *name*, e.g. lambdaLVish-nat, which becomes the `lang-name` passed to Redex's `define-language` form.
   * a *"downset" operation*, a Racket-level procedure that takes a lattice element and returns the (finite) set of all lattice elements that are below that element.
   * a *lub operation*, a Racket-level procedure that takes two lattice elements and returns a lattice element.
-  * an *inflationary operation*, a Racket-level procedure that takes a lattice element and returns a lattice element.
+  * an *update operation*, a Racket-level procedure that takes a lattice element and returns a lattice element.
   * some number of *lattice elements* represented as Redex patterns, not including top and bottom elements, since we add those automatically.
 
 For instance, to generate a language definition called `lambdaLVish-nat` where the lattice is the natural numbers with `max` as the least upper bound, one can write:
 
 ```racket
-(define-lambaLVish-language lambdaLVish-nat downset-op max inflationary-op natural)
+(define-lambaLVish-language lambdaLVish-nat downset-op max update-op natural)
 ```
 
-where `natural` and `downset-op` are as above, and `inflationary-op` is defined as
+where `natural` and `downset-op` are as above, and `update-op` is defined as
 
 ```racket
-(define inflationary-op
+(define update-op
   (lambda (d)
     (match d
       ['Bot 1]
@@ -96,7 +96,7 @@ where `natural` and `downset-op` are as above, and `inflationary-op` is defined 
 
 The file `lambdaLVish/nat.rkt` contains this instantiation and a test suite of programs for `lambdaLVish-nat`.
 
-The inflationary operation is how we model arbitrary update operations.  If the Redex model matched the on-paper version of lambdaLVish, we could pass in a *set* of update operations, not just one, but this is what the model can handle for now.
+The `update-op` procedure is how we model update operations.  If the Redex model matched the on-paper version of lambdaLVish, we could pass in a *set* of update operations, not just one, but this is what the model can handle for now.
 
 ## Reduction traces
 

@@ -1,8 +1,8 @@
 # lambdaLVish in Redex
 
-The code in this directory is a PLT Redex model of the lambdaLVish calculus from chapter 3 of [my dissertation](https://github.com/lkuper/dissertation).  lambdaLVish is similar to [the LVish calculus](https://github.com/lkuper/lvar-semantics/tree/master/LVish#readme), but (1) renamed so as not to be confused with [the LVish Haskell library](http://hackage.haskell.org/package/lvish), and (2) extended with support for arbitrary *update operations*.  Update operations generalize the `put` operation to allow not only least-upper-bound writes, but any inflationary write.
+The code in this directory is a PLT Redex model of the lambdaLVish calculus from chapter 3 of [my dissertation](https://github.com/lkuper/dissertation).  lambdaLVish is similar to [the LVish calculus](https://github.com/lkuper/lvar-semantics/tree/master/LVish#readme), but (1) renamed so as not to be confused with [the LVish Haskell library](http://hackage.haskell.org/package/lvish), and (2) extended with support for arbitrary *update operations*.  Update operations generalize the `put` operation to allow not only least-upper-bound writes, but any inflationary and commutative write.
 
-This Redex model of lambdaLVish differs from the on-paper version of lambdaLVish in that, instead of allowing you to specify a family of inflationary update operations, you can only specify one inflationary operation.  Sorry!
+This Redex model of lambdaLVish differs from the on-paper version of lambdaLVish in that, instead of allowing you to specify a family of update operations, you can only specify one update operation.  Sorry!
 
 ### Version requirements
 

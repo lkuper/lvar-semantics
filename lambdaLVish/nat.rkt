@@ -5,7 +5,7 @@
   (require srfi/1)
   (provide lambdaLVish-nat)
   
-  (define-lambdaLVish-language lambdaLVish-nat downset-op max inflationary-op natural)
+  (define-lambdaLVish-language lambdaLVish-nat downset-op max update-op natural)
 
   ;; To figure out at some point: maybe we could actually write
   ;; downset-op with Redex patterns?
@@ -16,8 +16,7 @@
           (append '(Bot) (iota d) `(,d))
           '(Bot))))
 
-  ;; The update operation.
-  (define inflationary-op
+  (define update-op
     (lambda (d)
       (match d
         ['Bot 1]
