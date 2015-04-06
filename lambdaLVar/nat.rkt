@@ -521,11 +521,11 @@
                             [x_4 (put x_2 (4))])
                     (get x_2 (4))))))
 
-              ;; When we're using slow-rr, we can end up with
-              ;; a store of ((l 3) (l1 4)) or a permutation thereof --
-              ;; that is, x_1 is allocated first, followed by x_2.  When
-              ;; we're using fast-rr, we always seem to get
-              ;; the allocation in the opposite order.  This is not
+              ;; When we're using slow-rr, we can end up with a store
+              ;; of ((l 3) (l1 4)) or a permutation thereof -- that
+              ;; is, x_1 is allocated first, followed by x_2.  When
+              ;; we're using fast-rr, we always seem to get the
+              ;; allocation in the opposite order.  This is not
               ;; nondeterministic in the sense that the result of
               ;; reading x_2 is always the same, but it ends up at a
               ;; different location in the store.  This is a hack to
