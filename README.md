@@ -94,7 +94,7 @@ where `natural` and `downset-op` are as above, and `inflationary-op` is defined 
       [number (add1 d)]))))
 ```
 
-The file `lambdaLVish/nat.rkt` contains this instantiation and a test suite of programs for `lambdaLVish-nat`.  `lambdaLVish/natpair-ivars.rkt` contains another example instantiation.
+The file `lambdaLVish/nat.rkt` contains this instantiation and a test suite of programs for `lambdaLVish-nat`.
 
 The inflationary operation is how we model arbitrary update operations.  If the Redex model matched the on-paper version of lambdaLVish, we could pass in a *set* of update operations, not just one, but this is what the model can handle for now.
 

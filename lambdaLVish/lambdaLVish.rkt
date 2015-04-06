@@ -1,8 +1,6 @@
 #lang racket
 ;; A Redex model of the lambdaLVish language.
 
-;; WIP: adding support for "bump".
-
 (provide define-lambdaLVish-language)
 
 ;; define-lambdaLVish-language takes the following arguments:
@@ -50,7 +48,6 @@
              lookup-val
              lookup-status
              lookup-state
-             lookup-type
              update-state
              incomp
              store-dom-diff
@@ -64,7 +61,7 @@
       ;; lambdaLVish syntax
 
       ;; Configurations on which the reduction relation operates.
-      (Config (SJ SB e)
+      (Config (S e)
               Error)
       
       ;; Expressions.
@@ -72,12 +69,10 @@
          v
          (e e)
          (get e e)
-         (put e e)
-         newPuttable
-         newBumpable
+         (puti e)
+         new
          (freeze e)
          (freeze e after e with e)
-         (bump e)
 
          ;; An intermediate language form -- this doesn't show up in
          ;; user programs.
@@ -99,10 +94,9 @@
                    ;; (we use StoreVal instead of d here because it
                    ;; will never be Top)
 
-         (StoreVal status type) ;; return value of `get` (we use
-                                ;; (StoreVal status type) instead of p
-                                ;; here because it will never be
-                                ;; Top-p)
+         (StoreVal status) ;; return value of `get` (we use (StoreVal
+                           ;; status) instead of p here because it
+                           ;; will never be Top-p)
 
          l  ;; locations (pointers to LVars in the store)
          P  ;; threshold sets
@@ -110,10 +104,10 @@
          (lambda (x) e))
 
       ;; Lattice elements, representing the "value" part of the state
-      ;; of an LVar (the other parts being "status" and "type").  We
-      ;; assume Top and Bot lattice elements in addition to the
-      ;; user-specified set of lattice elements.  A StoreVal can be
-      ;; any element of the lattice except Top.
+      ;; of an LVar (the other part being "status").  We assume Top
+      ;; and Bot lattice elements in addition to the user-specified
+      ;; set of lattice elements.  A StoreVal can be any element of
+      ;; the lattice except Top.
       
       ;; N.B. In the LaTeX grammar, we leave out these next two rules.
       ;; That's because in that grammar, the user-provided lattice
@@ -122,22 +116,6 @@
       ;; every place we use StoreVal here.
       (d StoreVal Top)
       (StoreVal lattice-elements ... Bot)
-
-      ;; Handled element sets.  A handled element set is a finite,
-      ;; potentially empty set of lattice elements excluding Top.
-      ;; Used to keep track of handled lattice elements in `freeze
-      ;; ... after`.
-      (H (d (... ...)))
-
-      ;; Stores.  A store is either a finite set of LVars (that is, a
-      ;; finite partial mapping from locations l to tuples of
-      ;; StoreVals, status flags, and type flags) or a distinguished
-      ;; value TopS.
-      (S (LVar (... ...)) TopS)
-      (LVar (l (StoreVal status type)))
-      (status #t #f)
-      (type Bumpable Puttable)
-      (l variable-not-otherwise-mentioned)
 
       ;; Threshold sets.  A threshold set is the set we pass to a
       ;; `get` expression that specifies a non-empty, pairwise
@@ -159,8 +137,22 @@
       ;; good way to express infinite event sets in Redex.
       (Q (d d (... ...)))
 
+      ;; Handled element sets.  A handled element set is a finite,
+      ;; potentially empty set of lattice elements excluding Top.
+      ;; Used to keep track of handled lattice elements in `freeze
+      ;; ... after`.
+      (H (d (... ...)))
+
+      ;; Stores.  A store is either a finite set of LVars (that is, a
+      ;; finite partial mapping from locations l to pairs of StoreVals
+      ;; and status flags) or a distinguished value TopS.
+      (S (LVar (... ...)) TopS)
+      (LVar (l (StoreVal status)))
+      (status #t #f)
+      (l variable-not-otherwise-mentioned)
+
       ;; States.
-      (p (StoreVal status type) Top-p)
+      (p (StoreVal status) Top-p)
 
       ;; Like P, but potentially empty.  Used in the type of the
       ;; exists-p metafunction.
@@ -176,8 +168,7 @@
          (e E)
          (get E e)
          (get e E)
-         (put E e)
-         (put e E)
+         (puti E)
          (freeze E)
          (freeze E after e with e)
          (freeze e after E with e)
@@ -202,51 +193,30 @@
             "E-Beta")
 
        ;; Allocation of new LVars.
-       (--> (S (in-hole E newPuttable))
-            ((update-state S l (Bot #f Puttable)) (in-hole E l))
+       (--> (S (in-hole E new))
+            ((update-state S l (Bot #f)) (in-hole E l))
             (where l (variable-not-in-store S))
-            "E-New-Puttable")
-       
-       (--> (S (in-hole E newBumpable))
-            ((update-state S l (Bot #f Bumpable)) (in-hole E l))
-            (where l (variable-not-in-store S))
-            "E-New-Bumpable")
+            "E-New")
 
-       ;; Least-upper-bound writes to LVars.
-
-       ;; If an LVar is frozen, putting a value that is less than or
-       ;; equal to the current value has no effect...
-       (--> (S (in-hole E (put l d_2)))
+       ;; Update.
+       (--> (S (in-hole E (puti l)))
             ((update-state S l p_2) (in-hole E ()))
             (where p_1 (lookup-state S l))
-            (where p_2 (lub-p p_1 (d_2 #f Puttable)))
-            (where (StoreVal status type) p_2)
-            (where Puttable (lookup-type S l))
+            (where p_2 (u-p p_1))
+            (where (StoreVal status) p_2)
             "E-Put")
 
-       ;; ...but putting a value that is greater than the current
-       ;; value, or has no order with the current value, raises an
-       ;; error.
-       (--> (S (in-hole E (put l d_2)))
+       ;; Update that would lead to an error.
+       (--> (S (in-hole E (puti l)))
             Error
             (where p_1 (lookup-state S l))
-            (where Top-p (lub-p p_1 (d_2 #f Puttable)))
+            (where Top-p (u-p p_1))
             "E-Put-Err")
        
-       ;; An LVar can only be bumped if it's unfrozen and Bumpable.
-       (--> (S (in-hole E (bump l)))
-            ((update-state S l p_2) (in-hole E ()))
-            (where p_1 (lookup-state S l))
-            (where p_2 (bump-p p_1))
-            (where (StoreVal status) p_2)
-            (where Bumpable (lookup-type S l))
-            "E-Bump")
-
-       ;; Programs can get stuck at runtime if they try to put to a
-       ;; non-Puttable LVar, or if they try to bump a non-Bumpable
-       ;; LVar.
-
-       ;; Threshold reads from LVars.
+       ;; Threshold reads from LVars.  The `incomp` and `exists-p`
+       ;; premises to this rule are why we still need to specify a lub
+       ;; operation, even though arbitrary update operations are
+       ;; allowed.
        (--> (S (in-hole E (get l P)))
             (S (in-hole E p_2))
             (where p_1 (lookup-state S l))
@@ -367,13 +337,9 @@
       [(lvstatus LVar) ,(second (second (term LVar)))])
 
     (define-metafunction name
-      lvtype : LVar -> type
-      [(lvtype LVar) ,(third (second (term LVar)))])
-
-    (define-metafunction name
-      build-lv : l StoreVal status type -> LVar
-      [(build-lv l StoreVal status type)
-       (l (StoreVal status type))])
+      build-lv : l StoreVal status -> LVar
+      [(build-lv l StoreVal status)
+       (l (StoreVal status))])
 
     ;; Returns a store that is the same as the original store S, but
     ;; with S(l) modified to be frozen.
@@ -383,7 +349,7 @@
        ,(let ([lv (assq (term l) (term S))]
               [update (lambda (lv)
                         (if (equal? (term (lvloc ,lv)) (term l))
-                            (term (build-lv (lvloc ,lv) (lvvalue ,lv) #t (lvtype ,lv)))
+                            (term (build-lv (lvloc ,lv) (lvvalue ,lv) #t))
                             lv))])
           (if lv
               (term ,(map update (term S)))
@@ -427,10 +393,10 @@
     (define-metafunction name
       store-dom : S -> (l (... ...))
       [(store-dom ()) ()]
-      [(store-dom ((l_1 (StoreVal_1 status_1 type_1))
-                   (l_2 (StoreVal_2 status_2 type_2)) (... ...)))
+      [(store-dom ((l_1 (StoreVal_1 status_1))
+                   (l_2 (StoreVal_2 status_2)) (... ...)))
        ,(cons (term l_1)
-              (term (store-dom ((l_2 (StoreVal_2 status_2 type_2)) (... ...)))))])
+              (term (store-dom ((l_2 (StoreVal_2 status_2)) (... ...)))))])
 
     ;; Return a list of locations in dom(S_1) that are not in dom(S_2).
     (define-metafunction name
@@ -488,35 +454,48 @@
       ;; than both d_1 and d_2.  In this case, (not (leq d_1 d_2)).
       [(leq d_1 d_2) #f])
 
-    ;; The lub operation, but extended to handle status bits.  We
-    ;; always use `Puttable` as the type here because we shouldn't be
-    ;; calling lub-p on anything that isn't Puttable!
+    ;; The inflationary operation, defined in terms of the
+    ;; user-provided inflationary-op.
+    (define-metafunction name
+      u : d -> d
+      [(u d) ,(inflationary-op (term d))])
+
+    ;; The inflationary operation, but extended to handle status bits.
+    (define-metafunction name
+      u-p : p -> p
+      [(u-p (d #f)) ((u d) #f)]
+      [(u-p (d #t))
+       ,(if (equal? (term (u d)) (term d))
+            (term (d #t))
+            (term Top-p))])
+
+    ;; The lub operation, but extended to handle status bits.
     (define-metafunction name
       lub-p : p p -> p
 
       ;; Neither frozen:
-      [(lub-p (d_1 #f Puttable) (d_2 #f Puttable))
+      [(lub-p (d_1 #f) (d_2 #f))
        ,(let ([d (term (lub d_1 d_2))])
           (if (equal? d (term Top))
               (term Top-p)
-              `(,d #f Puttable)))]
+              `(,d #f)))]
 
       ;; Both frozen:
-      [(lub-p (d_1 #t Puttable) (d_2 #t Puttable))
+      [(lub-p (d_1 #t) (d_2 #t))
        ,(if (equal? (term d_1) (term d_2))
-            (term (d_1 #t Puttable))
+            (term (d_1 #t))
             (term Top-p))]
 
       ;; d_1 unfrozen, d_2 frozen:
-      [(lub-p (d_1 #f Puttable) (d_2 #t Puttable))
+      [(lub-p (d_1 #f) (d_2 #t))
        ,(if (term (leq d_1 d_2))
-            (term (d_2 #t Puttable))
+            (term (d_2 #t))
             (term Top-p))]
 
       ;; d_1 frozen, d_2 unfrozen:
-      [(lub-p (d_1 #t Puttable) (d_2 #f Puttable))
+      [(lub-p (d_1 #t) (d_2 #f))
        ,(if (term (leq d_2 d_1))
-            (term (d_1 #t Puttable))
+            (term (d_1 #t))
             (term Top-p))])
 
     ;; The leq operation, but extended to handle status bits:
@@ -524,19 +503,19 @@
       leq-p : p p -> boolean
 
       ;; Neither frozen:
-      [(leq-p (d_1 #f type_1) (d_2 #f type_2))
+      [(leq-p (d_1 #f) (d_2 #f))
        (leq d_1 d_2)]
 
       ;; Both frozen:
-      [(leq-p (d_1 #t type_1) (d_2 #t type_2))
+      [(leq-p (d_1 #t) (d_2 #t))
        ,(equal? (term d_1) (term d_2))]
 
       ;; d_1 unfrozen, d_2 frozen:
-      [(leq-p (d_1 #f type_1) (d_2 #t type_2))
+      [(leq-p (d_1 #f) (d_2 #t))
        (leq d_1 d_2)]
 
       ;; d_1 frozen, d_2 unfrozen:
-      [(leq-p (d_1 #t type_1) (d_2 #f type_2))
+      [(leq-p (d_1 #t) (d_2 #f))
        ,(equal? (term d_1) (term Top))])
 
     (define-metafunction name
@@ -559,13 +538,6 @@
                                  (error "lookup-status: lookup failed")))])
 
     (define-metafunction name
-      lookup-type : S l -> type
-      [(lookup-type S l) ,(let ([lv (assq (term l) (term S))])
-                             (if lv
-                                 (term (lvtype ,lv))
-                                 (error "lookup-type: lookup failed")))])
-
-    (define-metafunction name
       lookup-state : S l -> p
       [(lookup-state S l) ,(let ([lv (assq (term l) (term S))])
                              (if lv
@@ -577,13 +549,10 @@
       update-state : S l p -> S
       [(update-state () l p) ((l p))]
 
-      [(update-state ((l_2 p_2)
-                  (l_3 p_3) (... ...)) l_1 p_1 )
+      [(update-state ((l_2 p_2) (l_3 p_3) (... ...))
+                     l_1 p_1)
        ,(if (equal? (term l_1) (term l_2))
-            ;; The side conditions on E-Put should ensure that the
-            ;; call to update-state only happens when the lub of the
-            ;; old and new values is non-Top-p.
-            (cons (term (l_2 (lub-p p_1 p_2)))
+            (cons (term (l_2 p_1))
                   (term ((l_3 p_3) (... ...))))
             (cons (term (l_2 p_2))
                   (term (update-state ((l_3 p_3) (... ...)) l_1 p_1))))])
