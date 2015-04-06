@@ -54,7 +54,7 @@ before_script:
 # Tip: Use `raco pkg install --deps search-auto <pkg>` to install any
 # required packages without getting stuck on a confirmation prompt.
 script:
-  - cd lambdaLVar && travis_wait make all
+  - cd lambdaLVar && travis_wait make
   - cd ..
   - cd LVish && travis_wait make all
   - cd ..
